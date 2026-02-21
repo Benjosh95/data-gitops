@@ -4,6 +4,7 @@ metadata:
   name: data-api-ingress
   namespace: default
   annotations:
+    argocd.argoproj.io/sync-wave: "10"  
     # MUST MATCH THE CORE GROUP NAME
     alb.ingress.kubernetes.io/group.name: data-platform-group
     # Lower priority means this rule is checked after others (or set specific orders)

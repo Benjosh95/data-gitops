@@ -4,6 +4,8 @@ metadata:
   name: data-api
   labels:
     app: data-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   replicas: 2 # High availability!
   selector:
