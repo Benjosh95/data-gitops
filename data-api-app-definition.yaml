@@ -4,7 +4,7 @@ metadata:
   name: data-api
   namespace: argocd
   # This runs SECOND
-  argocd.argoproj.io/sync-wave: "2"
+  argocd.argoproj.io/sync-wave: "3"
 spec:
   project: default
   source:

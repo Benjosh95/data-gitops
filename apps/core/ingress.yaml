@@ -2,22 +2,40 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: shared-main-ingress
-  namespace: kube-system # Usually best to keep core infra here or in a 'networking' ns
+  namespace: kube-system
   annotations:
+    # 1. Sync Wave: Ensures the LBC Controller (Wave 2) is ready first
+    argocd.argoproj.io/sync-wave: "5"
+
+    # 2. ALB Configuration
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    # THE MAGIC LINK: This name must be identical across all apps
-    alb.ingress.kubernetes.io/group.name: data-platform-group 
+    
+    # 3. Grouping: This is the "Anchor" for the data-platform-group
+    alb.ingress.kubernetes.io/group.name: data-platform-group
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+
+    # 4. The "Senior" Secret: Fixed Response Action
+    # This prevents the "Service Not Found" error by handling the response at the ALB level.
+    alb.ingress.kubernetes.io/actions.root-404: >
+      {
+        "Type": "fixed-response",
+        "FixedResponseConfig": {
+          "ContentType": "text/plain",
+          "StatusCode": "404",
+          "MessageBody": "Data Platform: Resource Not Found"
+        }
+      }
 spec:
   ingressClassName: alb
   rules:
     - http:
         paths:
-          - path: /health-check-main
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: any-dummy-service # Just a placeholder so the ALB initializes
+                # Use the action defined in the annotation above
+                name: root-404
                 port:
-                  number: 80
+                  name: use-annotation

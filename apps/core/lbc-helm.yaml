@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2" 
+spec:
+  project: default
+  source:
+    repoURL: 'https://aws.github.io/eks-charts' # Official AWS Helm Repo
+    chart: aws-load-balancer-controller
+    targetRevision: 1.11.0 # Use the current stable version
+    helm:
+      values: |
+        clusterName: data-cluster
+        serviceAccount:
+          create: true
+          name: aws-load-balancer-controller
+          annotations:
+            # THIS IS CRITICAL: No annotation needed if using Pod Identity! 
+            # The Pod Identity Agent handles the link automatically.
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kube-system # Standard practice to put controllers here
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
