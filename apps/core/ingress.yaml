@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shared-main-ingress
+  namespace: kube-system # Usually best to keep core infra here or in a 'networking' ns
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    # THE MAGIC LINK: This name must be identical across all apps
+    alb.ingress.kubernetes.io/group.name: data-platform-group 
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /health-check-main
+            pathType: Prefix
+            backend:
+              service:
+                name: any-dummy-service # Just a placeholder so the ALB initializes
+                port:
+                  number: 80

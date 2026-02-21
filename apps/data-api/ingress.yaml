@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: data-api-ingress
+  namespace: default
+  annotations:
+    # MUST MATCH THE CORE GROUP NAME
+    alb.ingress.kubernetes.io/group.name: data-platform-group
+    # Lower priority means this rule is checked after others (or set specific orders)
+    alb.ingress.kubernetes.io/group.order: '10' 
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: / # Or /api if you want to prefix it
+            pathType: Prefix
+            backend:
+              service:
+                name: data-api-service # Ensure this matches your service.yaml name
+                port:
+                  number: 8080
