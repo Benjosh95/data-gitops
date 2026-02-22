@@ -4,41 +4,21 @@ metadata:
   name: aws-load-balancer-controller
   namespace: argocd
   annotations:
-    # Wave 2 ensures it starts after the Core namespace/setup but before the Ingresses
     argocd.argoproj.io/sync-wave: "2" 
 spec:
   project: default
-  sources:
-    # SOURCE 1: The official AWS Helm Chart
-    - repoURL: 'https://aws.github.io/eks-charts'
-      chart: aws-load-balancer-controller
-      targetRevision: 1.11.0 
-      helm:
-        # We use 'valuesObject' for cleaner YAML formatting
-        valuesObject:
-          clusterName: data-cluster
-          region: eu-central-1 # Explicitly set your region
-          serviceAccount:
-            create: true
-            name: aws-load-balancer-controller
-            # Reminder: No IAM annotation needed thanks to Pod Identity!
-
-    # SOURCE 2: The Discovery Source (The ConfigMap created by Terraform)
-    - ref: cluster-metadata
-      repoURL: 'https://kubernetes.default.svc'
-      kind: ConfigMap
-      name: cluster-info
-      namespace: kube-system
-
-  # THE MAGIC BRIDGE: Injects the VPC ID from Source 2 into the Helm Chart in Source 1
-  template:
-    spec:
-      source:
-        helm:
-          parameters:
-            - name: vpcId
-              value: '$cluster-metadata:vpc_id'
-
+  source: # Back to singular 'source'
+    repoURL: 'https://aws.github.io/eks-charts'
+    chart: aws-load-balancer-controller
+    targetRevision: 1.11.0 
+    helm:
+      valuesObject:
+        clusterName: data-cluster
+        region: eu-central-1
+        # vpcId is GONE. The controller finds it via Subnet Tags.
+        serviceAccount:
+          create: true
+          name: aws-load-balancer-controller
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kube-system 
