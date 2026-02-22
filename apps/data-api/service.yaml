@@ -10,7 +10,7 @@ spec:
     app: data-api 
   ports:
     - protocol: TCP
-      port: 80         # The port the Service listens on
+      port: 8080         # The port the Service listens on
       targetPort: 8080 # The port your Go/Gin app is listening on (0.0.0.0:8080)
   # NodePort is required for the AWS Application Load Balancer to talk to the cluster
   type: NodePort
