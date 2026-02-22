@@ -4,24 +4,47 @@ metadata:
   name: aws-load-balancer-controller
   namespace: argocd
   annotations:
+    # Wave 2 ensures it starts after the Core namespace/setup but before the Ingresses
     argocd.argoproj.io/sync-wave: "2" 
 spec:
   project: default
-  source:
-    repoURL: 'https://aws.github.io/eks-charts' # Official AWS Helm Repo
-    chart: aws-load-balancer-controller
-    targetRevision: 1.11.0 # Use the current stable version
-    helm:
-      values: |
-        clusterName: data-cluster
-        serviceAccount:
-          create: true
-          name: aws-load-balancer-controller
-          annotations:
-            # THIS IS CRITICAL: No annotation needed if using Pod Identity! 
-            # The Pod Identity Agent handles the link automatically.
+  sources:
+    # SOURCE 1: The official AWS Helm Chart
+    - repoURL: 'https://aws.github.io/eks-charts'
+      chart: aws-load-balancer-controller
+      targetRevision: 1.11.0 
+      helm:
+        # We use 'valuesObject' for cleaner YAML formatting
+        valuesObject:
+          clusterName: data-cluster
+          region: eu-central-1 # Explicitly set your region
+          serviceAccount:
+            create: true
+            name: aws-load-balancer-controller
+            # Reminder: No IAM annotation needed thanks to Pod Identity!
+
+    # SOURCE 2: The Discovery Source (The ConfigMap created by Terraform)
+    - ref: cluster-metadata
+      repoURL: 'https://kubernetes.default.svc'
+      kind: ConfigMap
+      name: cluster-info
+      namespace: kube-system
+
+  # THE MAGIC BRIDGE: Injects the VPC ID from Source 2 into the Helm Chart in Source 1
+  template:
+    spec:
+      source:
+        helm:
+          parameters:
+            - name: vpcId
+              value: '$cluster-metadata:vpc_id'
+
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: kube-system # Standard practice to put controllers here
+    namespace: kube-system 
   syncPolicy:
-    automated: { prune: true, selfHeal: true }
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
