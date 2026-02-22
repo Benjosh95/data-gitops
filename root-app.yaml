@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/benjosh95/data-gitops.git
     targetRevision: HEAD
-    path: apps # Points to the folder containing your individual apps
+    path: . # Points to the folder containing your individual apps
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
